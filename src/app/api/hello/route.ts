@@ -37,3 +37,36 @@ import {
       headers: ACTIONS_CORS_HEADERS, // Set CORS headers
     });
   }
+export const OPTIONS = GET; // Allow OPTIONS request to use GET handler
+
+
+
+export async function POST(request: Request) {
+    const postRequest : ActionPostRequest = await request.json()
+    const userPubKey = postRequest.account
+ 
+    const connection = new Connection(clusterApiUrl('devnet'))
+    const user = new PublicKey(userPubKey)
+    const tx = new Transaction()
+
+    
+   
+    const ix = SystemProgram.transfer({
+      fromPubkey : user,
+      toPubkey : new PublicKey('C2JZmf5ubGMmGKUrbEqJ87VwND57t8fTkRcx1Trjh1ji'),
+      lamports : LAMPORTS_PER_SOL * 0.1
+    })
+  
+    tx.add(ix)
+    tx.feePayer = new PublicKey(userPubKey)
+    tx.recentBlockhash = (await connection.getLatestBlockhash({commitment : "finalized"})).blockhash
+    const serialTX = tx.serialize({requireAllSignatures : false, verifySignatures : false}).toString("base64")
+    console.log("Recent Blockhash : " + tx.recentBlockhash)
+    const response : ActionPostResponse = {
+        transaction : serialTX,
+        message : userPubKey,
+        type : 'transaction'
+      
+      }
+      return Response.json(response, {headers : ACTIONS_CORS_HEADERS})
+}
